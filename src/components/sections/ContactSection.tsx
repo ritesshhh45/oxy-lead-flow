@@ -45,7 +45,10 @@ export function ContactSection() {
   const phone1 = site.phone;
   const phone2 = site.phone2;
 
-  const whatsapp = whatsappLink(waMessages.general, site.whatsapp);
+  const whatsapp = whatsappLink(
+    waMessages.general,
+    site.whatsapp,
+  );
 
   return (
     <Section id="contact">
@@ -54,14 +57,16 @@ export function ContactSection() {
           <SectionHeading
             eyebrow="Contact"
             title="Talk to OXYTIVE"
-            subtitle="Call, message or send your requirement. We reply during business hours."
+            subtitle="Call, message or send your requirement. Our team is available 24/7."
           />
 
           <Reveal className="mt-8 space-y-4">
             {/* Phone */}
             <a
               href={`tel:${site.phoneRaw}`}
-              onClick={() => track("phone_click", { from: "contact" })}
+              onClick={() =>
+                track("phone_click", { from: "contact" })
+              }
               className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-brand/50"
             >
               <Phone className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
@@ -83,7 +88,9 @@ export function ContactSection() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() =>
-                track("whatsapp_click", { from: "contact" })
+                track("whatsapp_click", {
+                  from: "contact",
+                })
               }
               className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-brand/50"
             >
@@ -138,17 +145,17 @@ export function ContactSection() {
               </span>
             </div>
 
-            {/* Business Hours */}
+            {/* Availability */}
             <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
               <Clock className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
 
               <span className="min-w-0">
                 <span className="block text-sm text-muted-foreground">
-                  Business hours
+                  Availability
                 </span>
 
                 <span className="block">
-                  {site.hours}
+                  Available 24/7
                 </span>
               </span>
             </div>
