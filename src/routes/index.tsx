@@ -6,14 +6,16 @@ import { WhyOxytive } from "@/components/sections/WhyOxytive";
 import { Quality } from "@/components/sections/Quality";
 import { BulkSection } from "@/components/sections/BulkSection";
 import { BusinessSection } from "@/components/sections/BusinessSection";
-import { EventSection } from "@/components/sections/EventSection";
 import { DistributorSection } from "@/components/sections/DistributorSection";
 import { ServiceArea } from "@/components/sections/ServiceArea";
 import { Faq, faqSchema } from "@/components/sections/Faq";
 import { ContactSection } from "@/components/sections/ContactSection";
+import { CoolWaterSection } from "@/components/sections/CoolWaterSection";
 import { localBusinessSchema, productSchema } from "@/lib/schema";
 
-const title = "OXYTIVE — Premium Packaged Drinking Water | Bulk, Events & Distribution";
+const title =
+  "OXYTIVE — Premium Packaged Drinking Water | Bulk, Events & Distribution";
+
 const description =
   "OXYTIVE packaged drinking water bottles by Vedarth Water Industry. Order for home, retail, hotels, restaurants, offices and events, or partner with us as a distributor.";
 
@@ -30,9 +32,18 @@ export const Route = createFileRoute("/")({
     ],
     links: [{ rel: "canonical", href: "/" }],
     scripts: [
-      { type: "application/ld+json", children: JSON.stringify(localBusinessSchema) },
-      { type: "application/ld+json", children: JSON.stringify(productSchema) },
-      { type: "application/ld+json", children: JSON.stringify(faqSchema) },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(localBusinessSchema),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(productSchema),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(faqSchema),
+      },
     ],
   }),
   component: Home,
@@ -47,9 +58,9 @@ function Home() {
 
       <WhyOxytive />
 
-      <BusinessSection />
+      <CoolWaterSection />
 
-      <EventSection />
+      <BusinessSection />
 
       <BulkSection />
 
