@@ -12,11 +12,8 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-
 import { EnquiryProvider } from "../components/enquiry/EnquiryProvider";
-
 import { Toaster } from "../components/ui/sonner";
-
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -104,34 +101,42 @@ export const Route = createRootRouteWithContext<{
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+
       {
         name: "viewport",
         content: "width=device-width, initial-scale=1",
       },
+
       {
         title: "OXYTIVE — Packaged Drinking Water",
       },
+
       {
         name: "description",
         content:
           "OXYTIVE premium packaged drinking water in 500 mL and 1 L. Retail, bulk, event and distributor enquiries.",
       },
+
       {
         name: "author",
         content: "OXYTIVE",
       },
+
       {
         property: "og:site_name",
         content: "OXYTIVE",
       },
+
       {
         property: "og:type",
         content: "website",
       },
+
       {
         name: "twitter:card",
         content: "summary_large_image",
       },
+
       {
         name: "twitter:site",
         content: "@Lovable",
@@ -175,17 +180,15 @@ export const Route = createRootRouteWithContext<{
 
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap",
+        href:
+          "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap",
       },
     ],
   }),
 
   shellComponent: RootShell,
-
   component: RootComponent,
-
   notFoundComponent: NotFoundComponent,
-
   errorComponent: ErrorComponent,
 });
 
@@ -198,7 +201,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
       <body>
         {children}
-
         <Scripts />
       </body>
     </html>
@@ -211,9 +213,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <EnquiryProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
-
         <Toaster />
       </EnquiryProvider>
     </QueryClientProvider>
