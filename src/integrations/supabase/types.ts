@@ -68,6 +68,7 @@ export type Database = {
           city: string | null
           created_at: string
           email: string | null
+          email_notification_status: string
           event_date: string | null
           event_type: string | null
           expected_guests: string | null
@@ -75,6 +76,7 @@ export type Database = {
           message: string | null
           name: string
           notes: string | null
+          notification_error: string | null
           page: string | null
           phone: string
           product: string | null
@@ -82,12 +84,14 @@ export type Database = {
           requirement_type: string | null
           source: string
           status: Database["public"]["Enums"]["lead_status"]
+          submission_key: string | null
           updated_at: string
           utm_campaign: string | null
           utm_content: string | null
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          whatsapp_notification_status: string
         }
         Insert: {
           area?: string | null
@@ -97,6 +101,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          email_notification_status?: string
           event_date?: string | null
           event_type?: string | null
           expected_guests?: string | null
@@ -104,6 +109,7 @@ export type Database = {
           message?: string | null
           name: string
           notes?: string | null
+          notification_error?: string | null
           page?: string | null
           phone: string
           product?: string | null
@@ -111,12 +117,14 @@ export type Database = {
           requirement_type?: string | null
           source?: string
           status?: Database["public"]["Enums"]["lead_status"]
+          submission_key?: string | null
           updated_at?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          whatsapp_notification_status?: string
         }
         Update: {
           area?: string | null
@@ -126,6 +134,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          email_notification_status?: string
           event_date?: string | null
           event_type?: string | null
           expected_guests?: string | null
@@ -133,6 +142,7 @@ export type Database = {
           message?: string | null
           name?: string
           notes?: string | null
+          notification_error?: string | null
           page?: string | null
           phone?: string
           product?: string | null
@@ -140,12 +150,14 @@ export type Database = {
           requirement_type?: string | null
           source?: string
           status?: Database["public"]["Enums"]["lead_status"]
+          submission_key?: string | null
           updated_at?: string
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          whatsapp_notification_status?: string
         }
         Relationships: []
       }
@@ -303,6 +315,8 @@ export type Database = {
         | "quoted"
         | "converted"
         | "lost"
+        | "closed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -438,6 +452,8 @@ export const Constants = {
         "quoted",
         "converted",
         "lost",
+        "closed",
+        "cancelled",
       ],
     },
   },
