@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, Loader2, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitLead, leadSchema, type LeadInput } from "@/lib/leads";
+import { submitLead, leadSchema, newSubmissionKey, type LeadInput } from "@/lib/leads";
 import { track, type TrackEvent } from "@/lib/analytics";
 import { useContact, useProducts, telHref, waHref } from "@/lib/cms";
 import {
@@ -90,6 +90,9 @@ export function LeadForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [serverError, setServerError] = useState("");
+  const [leadId, setLeadId] = useState("");
+  const keyRef = useRef<string>("");
+  const lockRef = useRef(false);
 
   useEffect(() => {
     track("form_open", { form: eventName });
@@ -108,6 +111,7 @@ export function LeadForm({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (lockRef.current) return;
     setServerError("");
     const payload: Record<string, string> = { ...defaults };
     list.forEach((f) => (payload[f] = values[f] ?? defaults[f] ?? ""));
@@ -122,30 +126,53 @@ export function LeadForm({
       return;
     }
     setErrors({});
+    lockRef.current = true;
     setState("sending");
+    if (!keyRef.current) keyRef.current = newSubmissionKey();
     try {
-      await submitLead(parsed.data as LeadInput);
+      const id = await submitLead(parsed.data as LeadInput, keyRef.current);
+      setLeadId(id);
       track("form_submit", { form: eventName });
       track(eventName, { requirement: payload["requirement_type"], product: payload["product"] });
       setState("done");
     } catch (err) {
+      console.error(err);
       setState("error");
-      setServerError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setServerError("We couldn't submit your enquiry right now. Please try again, or call / WhatsApp us directly.");
+    } finally {
+      lockRef.current = false;
     }
   }
 
   if (state === "done") {
+    const v = { ...defaults, ...values };
+    const followUp = [
+      "Hi OXYTIVE Team,",
+      "I just submitted an enquiry on your website.",
+      "",
+      `Name: ${v["name"] ?? ""}`,
+      v["product"] ? `Product: ${v["product"]}` : `Requirement: ${v["requirement_type"] ?? "-"}`,
+      `Quantity: ${v["quantity"] || "-"}`,
+      `Lead ID: ${leadId.slice(0, 8).toUpperCase()}`,
+      "",
+      "Please contact me regarding this enquiry.",
+    ].join("\n");
     return (
       <div className={cn("rounded-xl border border-border bg-card p-6 text-center", className)}>
         <CheckCircle2 className="mx-auto h-10 w-10 text-brand" aria-hidden />
         <h3 className="mt-3 font-display text-xl">Thank you!</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your enquiry has been received. Our team will contact you shortly.
+          Your enquiry has been received successfully. Our OXYTIVE team will contact you shortly.
         </p>
+        {leadId && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Reference: <span className="font-mono">{leadId.slice(0, 8).toUpperCase()}</span>
+          </p>
+        )}
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button asChild variant="default">
             <a
-              href={waHref(contact.whatsapp, waMessage)}
+              href={waHref(contact.whatsapp, followUp)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track("whatsapp_click", { from: "thank_you" })}
@@ -155,7 +182,7 @@ export function LeadForm({
           </Button>
           <Button asChild variant="outline">
             <a href={telHref(contact.phone1)} onClick={() => track("phone_click", { from: "thank_you" })}>
-              <Phone className="mr-1 h-4 w-4" /> Call {contact.phone1}
+              <Phone className="mr-1 h-4 w-4" /> Call OXYTIVE
             </a>
           </Button>
         </div>
@@ -219,7 +246,7 @@ export function LeadForm({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="submit" size="lg" className="flex-1" disabled={state === "sending"}>
           {state === "sending" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {submitLabel}
+          {state === "sending" ? "Submitting..." : submitLabel}
         </Button>
         <Button asChild size="lg" variant="outline" className="sm:w-auto">
           <a
