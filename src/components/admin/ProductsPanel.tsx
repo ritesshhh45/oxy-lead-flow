@@ -24,7 +24,7 @@ export function ProductsPanel() {
     setBusy(id);
     const { error } = await supabase.from("products").update(patch as never).eq("id", id);
     setBusy(null);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Product saved");
     void refresh();
   }
@@ -36,14 +36,14 @@ export function ProductsPanel() {
       description: "",
       display_order: (products?.length ?? 0) + 1,
     } as never);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void refresh();
   }
 
   async function remove(id: string) {
     if (!confirm("Delete this product permanently?")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void refresh();
   }
 

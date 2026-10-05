@@ -14,6 +14,7 @@ export type TrackEvent =
   | "business_enquiry"
   | "event_enquiry"
   | "distributor_enquiry"
+  | "dealer_enquiry"
   | "product_click"
   | "product_view";
 

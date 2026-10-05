@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, LogOut } from "lucide-react";
+import { Loader2, RefreshCw, LogOut, Phone, MessageCircle, Mail, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const STATUSES = ["new", "contacted", "qualified", "quoted", "converted", "lost"] as const;
+const STATUSES = ["new", "contacted", "quoted", "converted", "closed", "cancelled", "qualified", "lost"] as const;
+const MAIN_STATUSES = ["new", "contacted", "quoted", "converted", "closed", "cancelled"] as const;
 
 type Lead = {
   id: string;
@@ -29,6 +31,10 @@ type Lead = {
   source: string | null;
   page: string | null;
   status: string;
+  product: string | null;
+  email_notification_status: string | null;
+  whatsapp_notification_status: string | null;
+  notification_error: string | null;
 };
 
 export const Route = createFileRoute("/admin")({
@@ -109,10 +115,40 @@ function SignIn() {
   );
 }
 
+function waDigits(p: string) {
+  const d = p.replace(/\D/g, "");
+  return d.length === 10 ? `91${d}` : d;
+}
+
+function NotifyBadge({ label, v }: { label: string; v: string | null }) {
+  const tone =
+    v === "sent"
+      ? "bg-primary/10 text-primary"
+      : v === "failed"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-muted text-muted-foreground";
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[11px] ${tone}`}>
+      {label}: {(v ?? "pending").replace("_", " ")}
+    </span>
+  );
+}
+
+function topCounts(leads: Lead[], key: keyof Lead) {
+  const m = new Map<string, number>();
+  leads.forEach((l) => {
+    const v = (l[key] as string | null)?.trim();
+    if (v) m.set(v, (m.get(v) ?? 0) + 1);
+  });
+  return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+}
+
 function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState<Lead | null>(null);
 
   async function load() {
     setLoading(true);
@@ -120,34 +156,76 @@ function Dashboard() {
       .from("leads")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(1000);
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setLeads((data ?? []) as Lead[]);
+    setLeads((data ?? []) as unknown as Lead[]);
   }
 
   useEffect(() => {
     void load();
   }, []);
 
-  const shown = useMemo(
-    () => (filter === "all" ? leads : leads.filter((l) => l.status === filter)),
-    [leads, filter],
-  );
+  const stats = useMemo(() => {
+    const now = new Date();
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const week = day - ((now.getDay() + 6) % 7) * 86400000;
+    const month = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const t = (l: Lead) => new Date(l.created_at).getTime();
+    const by = (s: string) => leads.filter((l) => l.status === s).length;
+    const converted = by("converted");
+    return {
+      total: leads.length,
+      today: leads.filter((l) => t(l) >= day).length,
+      week: leads.filter((l) => t(l) >= week).length,
+      month: leads.filter((l) => t(l) >= month).length,
+      new: by("new"),
+      contacted: by("contacted"),
+      quoted: by("quoted"),
+      converted,
+      closed: by("closed"),
+      rate: leads.length ? ((converted / leads.length) * 100).toFixed(1) : "0.0",
+    };
+  }, [leads]);
 
-  async function setStatus(id: string, status: (typeof STATUSES)[number]) {
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return leads.filter(
+      (l) =>
+        (filter === "all" || l.status === filter) &&
+        (!term ||
+          [l.name, l.phone, l.email, l.city, l.product, l.requirement_type]
+            .filter(Boolean)
+            .some((v) => (v as string).toLowerCase().includes(term))),
+    );
+  }, [leads, filter, q]);
+
+  async function setStatus(id: string, status: string) {
     const prev = leads;
     setLeads((p) => p.map((l) => (l.id === id ? { ...l, status } : l)));
-    const { error } = await supabase.from("leads").update({ status }).eq("id", id);
-
+    setOpen((o) => (o && o.id === id ? { ...o, status } : o));
+    const { error } = await supabase.from("leads").update({ status } as never).eq("id", id);
     if (error) {
       setLeads(prev);
       toast.error(error.message);
-    }
+    } else toast.success("Status updated");
   }
+
+  const cards: [string, string | number][] = [
+    ["Total enquiries", stats.total],
+    ["Today", stats.today],
+    ["This week", stats.week],
+    ["This month", stats.month],
+    ["New", stats.new],
+    ["Contacted", stats.contacted],
+    ["Quoted", stats.quoted],
+    ["Converted", stats.converted],
+    ["Closed", stats.closed],
+    ["Conversion rate", `${stats.rate}%`],
+  ];
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6">
@@ -167,8 +245,43 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {["all", ...STATUSES].map((s) => (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {cards.map(([k, v]) => (
+            <div key={k} className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">{k}</p>
+              <p className="mt-1 text-2xl font-semibold">{v}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {(
+            [
+              ["Top products", topCounts(leads, "product")],
+              ["Top cities", topCounts(leads, "city")],
+              ["Requirement types", topCounts(leads, "requirement_type")],
+            ] as [string, [string, number][]][]
+          ).map(([title, rows]) => (
+            <div key={title} className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">{title}</p>
+              {rows.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">No data yet</p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-sm">
+                  {rows.map(([n, c]) => (
+                    <li key={n} className="flex justify-between gap-2">
+                      <span className="truncate">{n}</span>
+                      <span className="text-muted-foreground">{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {["all", ...MAIN_STATUSES].map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}
@@ -181,6 +294,10 @@ function Dashboard() {
               {s} {s !== "all" && `(${leads.filter((l) => l.status === s).length})`}
             </button>
           ))}
+          <div className="relative ml-auto w-full sm:w-64">
+            <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-8" placeholder="Search name, phone, city…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
         </div>
 
         {loading ? (
@@ -190,65 +307,98 @@ function Dashboard() {
         ) : shown.length === 0 ? (
           <p className="mt-16 text-center text-sm text-muted-foreground">No enquiries here yet.</p>
         ) : (
-          <div className="mt-6 grid gap-4">
-            {shown.map((l) => (
-              <article key={l.id} className="rounded-2xl border border-border bg-card p-5">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-                  <div className="min-w-0">
-                    <h2 className="truncate text-lg">{l.name}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      <a href={`tel:${l.phone}`} className="underline">
-                        {l.phone}
-                      </a>
-                      {l.email ? ` • ${l.email}` : ""}
-                      {l.city ? ` • ${l.city}` : ""}
-                      {l.area ? `, ${l.area}` : ""}
-                    </p>
-                  </div>
-                  <select
-                    value={l.status}
-                    onChange={(e) => void setStatus(l.id, e.target.value as (typeof STATUSES)[number])}
-                    className="shrink-0 rounded-md border border-input bg-background px-2 py-1.5 text-xs capitalize"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <dl className="mt-4 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
-                  {(
-                    [
-                      ["Requirement", l.requirement_type],
-                      ["Quantity", l.quantity],
-                      ["Bottle size", l.bottle_size],
-                      ["Event", l.event_type],
-                      ["Event date", l.event_date],
-                      ["Guests", l.expected_guests],
-                      ["Business", l.business_name],
-                      ["Business type", l.business_type],
-                      ["Source", l.source],
-                      ["Page", l.page],
-                      ["Received", new Date(l.created_at).toLocaleString()],
-                    ] as [string, string | null][]
-                  )
-                    .filter(([, v]) => v)
-                    .map(([k, v]) => (
-                      <div key={k} className="min-w-0">
-                        <dt className="text-muted-foreground">{k}</dt>
-                        <dd className="truncate">{v}</dd>
-                      </div>
-                    ))}
-                </dl>
-
-                {l.message && <p className="mt-3 text-sm leading-relaxed">{l.message}</p>}
-              </article>
-            ))}
+          <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-card">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="text-left text-xs text-muted-foreground">
+                <tr className="border-b border-border">
+                  {["Name", "Phone", "Email", "City", "Requirement", "Product", "Qty", "Status", "Alerts", "Received"].map((h) => (
+                    <th key={h} className="px-3 py-2 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((l) => (
+                  <tr key={l.id} className="cursor-pointer border-b border-border last:border-0 hover:bg-accent/40" onClick={() => setOpen(l)}>
+                    <td className="px-3 py-2 font-medium">{l.name}</td>
+                    <td className="px-3 py-2">{l.phone}</td>
+                    <td className="px-3 py-2">{l.email ?? "—"}</td>
+                    <td className="px-3 py-2">{l.city ?? "—"}</td>
+                    <td className="px-3 py-2">{l.requirement_type ?? "—"}</td>
+                    <td className="px-3 py-2">{l.product ?? l.bottle_size ?? "—"}</td>
+                    <td className="px-3 py-2">{l.quantity ?? "—"}</td>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={l.status}
+                        onChange={(e) => void setStatus(l.id, e.target.value)}
+                        className="rounded-md border border-input bg-background px-2 py-1 text-xs capitalize"
+                      >
+                        {STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="space-y-1 px-3 py-2">
+                      <NotifyBadge label="Email" v={l.email_notification_status} />{" "}
+                      <NotifyBadge label="WA" v={l.whatsapp_notification_status} />
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs">{new Date(l.created_at).toLocaleString("en-IN")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+          {open && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">{open.name}</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm"><a href={`tel:${open.phone}`}><Phone className="mr-1 h-4 w-4" /> Call</a></Button>
+                <Button asChild size="sm" variant="outline">
+                  <a href={`https://wa.me/${waDigits(open.phone)}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-1 h-4 w-4" /> WhatsApp</a>
+                </Button>
+                {open.email && (
+                  <Button asChild size="sm" variant="outline"><a href={`mailto:${open.email}`}><Mail className="mr-1 h-4 w-4" /> Email</a></Button>
+                )}
+                <select
+                  value={open.status}
+                  onChange={(e) => void setStatus(open.id, e.target.value)}
+                  className="ml-auto rounded-md border border-input bg-background px-2 py-1 text-sm capitalize"
+                >
+                  {STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}
+                </select>
+              </div>
+              <dl className="mt-2 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                {(
+                  [
+                    ["Phone", open.phone], ["Email", open.email], ["City", open.city], ["Area", open.area],
+                    ["Requirement", open.requirement_type], ["Product", open.product], ["Quantity", open.quantity],
+                    ["Bottle size", open.bottle_size], ["Event", open.event_type], ["Event date", open.event_date],
+                    ["Guests", open.expected_guests], ["Business", open.business_name], ["Business type", open.business_type],
+                    ["Source", open.source], ["Page", open.page], ["Submitted", new Date(open.created_at).toLocaleString("en-IN")],
+                    ["Email notification", open.email_notification_status], ["WhatsApp notification", open.whatsapp_notification_status],
+                    ["Lead ID", open.id],
+                  ] as [string, string | null][]
+                ).filter(([, v]) => v).map(([k, v]) => (
+                  <div key={k} className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{k}</dt>
+                    <dd className="break-words">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              {open.message && <p className="rounded-lg bg-muted p-3 text-sm leading-relaxed">{open.message}</p>}
+              {open.notification_error && (
+                <p className="text-xs text-destructive">Notification issue: {open.notification_error}</p>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
