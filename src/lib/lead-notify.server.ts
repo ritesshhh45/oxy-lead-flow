@@ -74,22 +74,10 @@ async function sendWhatsApp(l: Lead): Promise<{ status: NotifyStatus; error?: st
   }
 }
 
-async function sendEmail(l: Lead): Promise<{ status: NotifyStatus; error?: string }> {
-  // Email sending activates once a sender domain is verified and the
-  // new-lead email template is registered.
-  try {
-    const mod = (await import("./email-templates/send-email").catch(() => null)) as null | {
-      sendTemplateEmail: (t: string, to: string, o: unknown) => Promise<{ sent: boolean; reason?: string }>;
-    };
-    if (!mod) return { status: "not_configured" };
-    const r = await mod.sendTemplateEmail("new-lead-admin", "oxytivewaterindustries@gmail.com", {
-      templateData: { ...l, submitted: whenIST(l.created_at) },
-      idempotencyKey: `new-lead-${l.id}`,
-    });
-    return r.sent ? { status: "sent" } : { status: "failed", error: `Email: ${r.reason ?? "not sent"}` };
-  } catch (e) {
-    return { status: "failed", error: `Email: ${e instanceof Error ? e.message : String(e)}` };
-  }
+async function sendEmail(_l: Lead): Promise<{ status: NotifyStatus; error?: string }> {
+  // Activates once a verified sender domain is set up for OXYTIVE.
+  // Until then the lead is saved and marked "not_configured" (never faked as sent).
+  return { status: "not_configured" };
 }
 
 export async function notifyNewLead(l: Lead) {
