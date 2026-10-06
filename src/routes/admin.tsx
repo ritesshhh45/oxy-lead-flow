@@ -165,8 +165,12 @@ function Dashboard() {
     setLeads((data ?? []) as unknown as Lead[]);
   }
 
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   useEffect(() => {
-    void load();
+    supabase.rpc("is_admin").then(({ data }) => {
+      setAllowed(!!data);
+      if (data) void load();
+    });
   }, []);
 
   const stats = useMemo(() => {
@@ -187,6 +191,7 @@ function Dashboard() {
       quoted: by("quoted"),
       converted,
       closed: by("closed"),
+      cancelled: by("cancelled"),
       rate: leads.length ? ((converted / leads.length) * 100).toFixed(1) : "0.0",
     };
   }, [leads]);
@@ -224,14 +229,28 @@ function Dashboard() {
     ["Quoted", stats.quoted],
     ["Converted", stats.converted],
     ["Closed", stats.closed],
+    ["Cancelled", stats.cancelled],
     ["Conversion rate", `${stats.rate}%`],
   ];
+
+  if (allowed === false) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+        <h1 className="text-2xl">Access restricted</h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          This account is not an approved OXYTIVE administrator.
+        </p>
+        <Button variant="outline" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="min-w-0">
+            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">OXYTIVE Admin</p>
             <h1 className="truncate text-2xl sm:text-3xl">Enquiries</h1>
             <p className="text-sm text-muted-foreground">{leads.length} total leads</p>
           </div>
@@ -245,9 +264,9 @@ function Dashboard() {
           </div>
         </header>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {cards.map(([k, v]) => (
-            <div key={k} className="rounded-xl border border-border bg-card p-4">
+            <div key={k} className="rounded-xl border border-border bg-card p-4 shadow-sm">
               <p className="text-xs text-muted-foreground">{k}</p>
               <p className="mt-1 text-2xl font-semibold">{v}</p>
             </div>
