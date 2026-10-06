@@ -75,10 +75,22 @@ function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"in" | "up">("in");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    if (mode === "up") {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/admin` },
+      });
+      setBusy(false);
+      if (error) toast.error(error.message);
+      else if (!data.session) toast.success("Check your email to confirm your account, then sign in.");
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -87,9 +99,10 @@ function SignIn() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-border bg-card p-8">
-        <h1 className="text-2xl">Team sign in</h1>
+        <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">OXYTIVE Admin</p>
+        <h1 className="mt-1 text-2xl">{mode === "in" ? "Sign in" : "Create admin account"}</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Enquiries are visible only to authorised OXYTIVE team accounts.
+          Only approved OXYTIVE administrator emails can view enquiries.
         </p>
         <div className="mt-6 space-y-4">
           <div className="space-y-1.5">
@@ -101,14 +114,22 @@ function SignIn() {
             <Input
               id="password"
               type="password"
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
-            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
+            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {mode === "in" ? "Sign in" : "Create account"}
           </Button>
+          <button
+            type="button"
+            className="w-full text-center text-xs text-muted-foreground underline"
+            onClick={() => setMode(mode === "in" ? "up" : "in")}
+          >
+            {mode === "in" ? "First time? Create your admin account" : "Already have an account? Sign in"}
+          </button>
         </div>
       </form>
     </div>
