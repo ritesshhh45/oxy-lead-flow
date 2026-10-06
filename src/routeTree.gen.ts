@@ -25,6 +25,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as QualityRouteImport } from './routes/quality'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -107,6 +108,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
   id: '/api/public/media/$',
   path: '/api/public/media/$',
@@ -116,7 +122,7 @@ const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bulk-orders': typeof BulkOrdersRoute
   '/bulk-water': typeof BulkWaterRoute
   '/contact': typeof ContactRoute
@@ -130,12 +136,13 @@ export interface FileRoutesByFullPath {
   '/quality': typeof QualityRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bulk-orders': typeof BulkOrdersRoute
   '/bulk-water': typeof BulkWaterRoute
   '/contact': typeof ContactRoute
@@ -149,13 +156,14 @@ export interface FileRoutesByTo {
   '/quality': typeof QualityRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bulk-orders': typeof BulkOrdersRoute
   '/bulk-water': typeof BulkWaterRoute
   '/contact': typeof ContactRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/quality': typeof QualityRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/terms': typeof TermsRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRouteTypes {
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/quality'
     | '/refund-policy'
     | '/terms'
+    | '/admin/login'
     | '/api/public/media/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/quality'
     | '/refund-policy'
     | '/terms'
+    | '/admin/login'
     | '/api/public/media/$'
   id:
     | '__root__'
@@ -228,13 +239,14 @@ export interface FileRouteTypes {
     | '/quality'
     | '/refund-policy'
     | '/terms'
+    | '/admin/login'
     | '/api/public/media/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BulkOrdersRoute: typeof BulkOrdersRoute
   BulkWaterRoute: typeof BulkWaterRoute
   ContactRoute: typeof ContactRoute
@@ -365,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/public/media/$': {
       id: '/api/public/media/$'
       path: '/api/public/media/$'
@@ -375,10 +394,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   BulkOrdersRoute: BulkOrdersRoute,
   BulkWaterRoute: BulkWaterRoute,
   ContactRoute: ContactRoute,
