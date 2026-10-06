@@ -189,7 +189,7 @@ export const Route = createRootRouteWithContext<{
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
+  errorComponent: (props) => <ErrorComponent error={props.error} reset={props.reset} />,
 });
 
 function RootShell({ children }: { children: ReactNode }) {
