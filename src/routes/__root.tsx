@@ -138,8 +138,13 @@ export const Route = createRootRouteWithContext<{
       },
 
       {
+<<<<<<< HEAD
         name: "twitter:site",
         content: "@Lovable",
+=======
+        property: "og:image",
+        content: "https://www.oxytive.in/favicon-512.png",
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
       },
     ],
 
@@ -149,6 +154,7 @@ export const Route = createRootRouteWithContext<{
         href: appCss,
       },
 
+<<<<<<< HEAD
       // OXYTIVE FAVICON
       {
         rel: "icon",
@@ -166,6 +172,14 @@ export const Route = createRootRouteWithContext<{
         rel: "apple-touch-icon",
         href: "/favicon.png",
       },
+=======
+      // OXYTIVE FAVICON (droplet mark; Google needs a square icon in multiples of 48px)
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon-48.png" },
+      { rel: "icon", type: "image/png", sizes: "96x96", href: "/favicon-96.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon-192.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 
       {
         rel: "preconnect",

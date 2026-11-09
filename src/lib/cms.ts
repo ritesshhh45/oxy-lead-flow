@@ -203,15 +203,26 @@ export function useMedia() {
 }
 
 /** True when the signed-in account is an approved OXYTIVE administrator. */
+<<<<<<< HEAD
 export function useIsAdmin(enabled = true) {
   return useQuery({
     queryKey: ["is_admin"],
     enabled,
+=======
+export function useIsAdmin(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["is_admin", userId],
+    enabled: !!userId,
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
     queryFn: async () => {
       const { data, error } = await supabase.rpc("is_admin");
       if (error) throw new Error(error.message);
       return Boolean(data);
     },
+<<<<<<< HEAD
     staleTime: 60_000,
+=======
+    staleTime: 0,
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
   });
 }

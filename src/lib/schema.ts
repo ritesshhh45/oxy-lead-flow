@@ -22,6 +22,11 @@ export const productSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: site.brand,
+<<<<<<< HEAD
+=======
+  url: "https://www.oxytive.in/",
+  logo: "https://www.oxytive.in/favicon-512.png",
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
   description: site.shortDescription,
   parentOrganization: { "@type": "Organization", name: site.company },
   telephone: site.phoneRaw,

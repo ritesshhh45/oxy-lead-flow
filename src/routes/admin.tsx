@@ -1,11 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, RefreshCw, LogOut, Phone, MessageCircle, Mail, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+=======
+import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { Loader2, LogOut } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+<<<<<<< HEAD
 import { toast } from "sonner";
 
 const STATUSES = ["new", "contacted", "quoted", "converted", "closed", "cancelled", "qualified", "lost"] as const;
@@ -36,27 +45,61 @@ type Lead = {
   whatsapp_notification_status: string | null;
   notification_error: string | null;
 };
+=======
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsAdmin } from "@/lib/cms";
+import { requestAdminAccess } from "@/lib/access.functions";
+import { LeadsPanel } from "@/components/admin/LeadsPanel";
+import { ProductsPanel } from "@/components/admin/ProductsPanel";
+import { ContentPanel } from "@/components/admin/ContentPanel";
+import { FaqsPanel } from "@/components/admin/FaqsPanel";
+import { AreasPanel } from "@/components/admin/AreasPanel";
+import { MediaPanel } from "@/components/admin/MediaPanel";
+import { AccessPanel, useAccessRequests } from "@/components/admin/AccessPanel";
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
+<<<<<<< HEAD
       { title: "Lead Dashboard — OXYTIVE" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "description", content: "Internal OXYTIVE enquiry dashboard." },
+=======
+      { title: "Admin — OXYTIVE" },
+      { name: "robots", content: "noindex, nofollow" },
+      { name: "description", content: "Internal OXYTIVE admin workspace." },
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
     ],
   }),
   component: AdminPage,
 });
 
+<<<<<<< HEAD
 function AdminPage() {
   const [session, setSession] = useState<unknown | null>(null);
   const [ready, setReady] = useState(false);
+=======
+function Spinner() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
+function AdminPage() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [ready, setReady] = useState(false);
+  const [recovering, setRecovering] = useState(false);
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setReady(true);
     });
+<<<<<<< HEAD
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -69,6 +112,23 @@ function AdminPage() {
     );
   }
   return session ? <Dashboard /> : <SignIn />;
+=======
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (!ready) return <Spinner />;
+  if (!session) return <SignIn />;
+  if (recovering) return <NewPassword onDone={() => setRecovering(false)} />;
+  return <AccessGate session={session} />;
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="flex min-h-screen items-center justify-center px-4">{children}</div>;
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 }
 
 function SignIn() {
@@ -80,14 +140,22 @@ function SignIn() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+<<<<<<< HEAD
     if (mode === "up") {
       const { data, error } = await supabase.auth.signUp({
         email,
+=======
+    const addr = email.trim();
+    if (mode === "up") {
+      const { data, error } = await supabase.auth.signUp({
+        email: addr,
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
         password,
         options: { emailRedirectTo: `${window.location.origin}/admin` },
       });
       setBusy(false);
       if (error) toast.error(error.message);
+<<<<<<< HEAD
       else if (!data.session) toast.success("Check your email to confirm your account, then sign in.");
       return;
     }
@@ -103,6 +171,34 @@ function SignIn() {
         <h1 className="mt-1 text-2xl">{mode === "in" ? "Sign in" : "Create admin account"}</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Only approved OXYTIVE administrator emails can view enquiries.
+=======
+      else if (!data.session) toast.success("Check your email and confirm your account, then sign in.");
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: addr, password });
+    setBusy(false);
+    if (error) {
+      toast.error(/not confirmed/i.test(error.message) ? "Please confirm your email first (check your inbox), then sign in." : error.message);
+    }
+  }
+
+  async function forgot() {
+    if (!email.trim()) return void toast.error("Enter your email first.");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/admin`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Password reset link sent. Check your email.");
+  }
+
+  return (
+    <Shell>
+      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-border bg-card p-8">
+        <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">OXYTIVE Admin</p>
+        <h1 className="mt-1 text-2xl">{mode === "in" ? "Sign in" : "Create account"}</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Only approved OXYTIVE administrators can open the panel. Others can sign in and request access.
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
         </p>
         <div className="mt-6 space-y-4">
           <div className="space-y-1.5">
@@ -111,6 +207,7 @@ function SignIn() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
+<<<<<<< HEAD
             <Input
               id="password"
               type="password"
@@ -119,10 +216,14 @@ function SignIn() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+=======
+            <Input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {mode === "in" ? "Sign in" : "Create account"}
           </Button>
+<<<<<<< HEAD
           <button
             type="button"
             className="w-full text-center text-xs text-muted-foreground underline"
@@ -265,10 +366,130 @@ function Dashboard() {
       </div>
     );
   }
+=======
+          {mode === "in" && (
+            <button type="button" className="w-full text-center text-xs text-muted-foreground underline" onClick={() => void forgot()}>
+              Forgot password?
+            </button>
+          )}
+          <button type="button" className="w-full text-center text-xs text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+            {mode === "in" ? "New here? Create an account" : "Already have an account? Sign in"}
+          </button>
+        </div>
+      </form>
+    </Shell>
+  );
+}
+
+function NewPassword({ onDone }: { onDone: () => void }) {
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setBusy(false);
+    if (error) return void toast.error(error.message);
+    toast.success("Password updated");
+    onDone();
+  }
+  return (
+    <Shell>
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8">
+        <h1 className="text-2xl">Set a new password</h1>
+        <Input type="password" minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} required placeholder="New password (8+ characters)" />
+        <Button type="submit" className="w-full" disabled={busy}>
+          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save password
+        </Button>
+      </form>
+    </Shell>
+  );
+}
+
+function AccessGate({ session }: { session: Session }) {
+  const { data: allowed, isLoading, error, refetch } = useIsAdmin(session.user.id);
+  if (isLoading) return <Spinner />;
+  if (error) {
+    return (
+      <Shell>
+        <div className="max-w-sm space-y-3 text-center">
+          <h1 className="text-2xl">Could not verify access</h1>
+          <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+          <div className="flex justify-center gap-2">
+            <Button onClick={() => void refetch()}>Try again</Button>
+            <Button variant="outline" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+  return allowed ? <Workspace email={session.user.email ?? ""} /> : <Restricted session={session} />;
+}
+
+function Restricted({ session }: { session: Session }) {
+  const [busy, setBusy] = useState(false);
+  const email = session.user.email ?? "";
+  const confirmed = !!session.user.email_confirmed_at;
+
+  const { data: mine, refetch } = useQuery({
+    queryKey: ["my_access_request", session.user.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("access_requests").select("status").eq("user_id", session.user.id).maybeSingle();
+      return (data as { status: string } | null)?.status ?? null;
+    },
+  });
+
+  async function request() {
+    setBusy(true);
+    try {
+      await requestAdminAccess();
+      toast.success("Request sent to the OXYTIVE admin.");
+      await refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send the request");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Shell>
+      <div className="max-w-sm space-y-3 text-center">
+        <h1 className="text-2xl">Access restricted</h1>
+        <p className="text-sm text-muted-foreground">
+          <strong>{email}</strong> is not an approved OXYTIVE administrator.
+        </p>
+        {!confirmed ? (
+          <p className="text-sm text-muted-foreground">Confirm your email address first (check your inbox), then sign in again.</p>
+        ) : mine === "pending" ? (
+          <p className="rounded-lg bg-muted p-3 text-sm">Your request is waiting for admin approval. You will get access once it is approved - refresh this page later.</p>
+        ) : (
+          <>
+            {mine === "rejected" && <p className="text-sm text-destructive">Your previous request was not approved.</p>}
+            <Button onClick={() => void request()} disabled={busy}>
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Request admin access
+            </Button>
+          </>
+        )}
+        <div className="flex justify-center gap-2 pt-1">
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>Refresh</Button>
+          <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+function Workspace({ email }: { email: string }) {
+  const qc = useQueryClient();
+  const { data: reqs } = useAccessRequests();
+  const pending = (reqs ?? []).filter((r) => r.status === "pending").length;
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
+<<<<<<< HEAD
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="min-w-0">
             <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">OXYTIVE Admin</p>
@@ -439,6 +660,45 @@ function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+=======
+        <header className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">OXYTIVE Admin</p>
+            <h1 className="text-2xl sm:text-3xl">Workspace</h1>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              qc.clear();
+              void supabase.auth.signOut();
+            }}
+          >
+            <LogOut className="mr-1 h-4 w-4" /> Sign out
+          </Button>
+        </header>
+
+        <Tabs defaultValue="leads" className="mt-6">
+          <TabsList className="h-auto flex-wrap justify-start">
+            <TabsTrigger value="leads">Leads</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="faqs">FAQs</TabsTrigger>
+            <TabsTrigger value="areas">Service areas</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="access">Access{pending > 0 ? ` (${pending})` : ""}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="leads" className="mt-4"><LeadsPanel /></TabsContent>
+          <TabsContent value="products" className="mt-4"><ProductsPanel /></TabsContent>
+          <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
+          <TabsContent value="faqs" className="mt-4"><FaqsPanel /></TabsContent>
+          <TabsContent value="areas" className="mt-4"><AreasPanel /></TabsContent>
+          <TabsContent value="media" className="mt-4"><MediaPanel /></TabsContent>
+          <TabsContent value="access" className="mt-4"><AccessPanel /></TabsContent>
+        </Tabs>
+      </div>
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
     </div>
   );
 }

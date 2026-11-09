@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+<<<<<<< HEAD
+=======
+      access_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          email: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          email: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          email?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
       admin_emails: {
         Row: {
           created_at: string

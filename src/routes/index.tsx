@@ -33,11 +33,16 @@ export const Route = createFileRoute("/")({
 
     links: [
       { rel: "canonical", href: "/" },
+<<<<<<< HEAD
       {
         rel: "icon",
         type: "image/png",
         href: "/favicon.png",
       },
+=======
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon-48.png" },
+>>>>>>> 5bd5473 (Phase 1: AapliCity rebrand, data-driven home, new routes)
     ],
 
     scripts: [
